@@ -1,4 +1,4 @@
-import { eq, like, and, desc } from "drizzle-orm";
+import { eq, like, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { 
@@ -25,7 +25,7 @@ export async function getDb() {
   return db;
 }
 
-// --- FUNCIONES DE USUARIO (Mantenidas) ---
+// --- FUNCIONES DE USUARIO ---
 
 export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId));
@@ -58,7 +58,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
-// --- FUNCIONES DE TICKETS (Restauradas para el build) ---
+// --- FUNCIONES DE TICKETS ---
 
 export async function createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket | null> {
   try {
@@ -82,9 +82,7 @@ export async function updateSupportTicket(id: number, data: any) {
   return await db.update(supportTickets).set(data).where(eq(supportTickets.id, id));
 }
 
-// --- FUNCIONES DE KNOWLEDGE BASE (Cascarones para evitar error de compilación) ---
-// Como ahora usas JSON en el cliente, estas funciones ya no se usan, 
-// pero el servidor las necesita exportadas para arrancar.
+// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para el Build) ---
 
 export async function getAllKnowledgeBaseArticles() {
   return []; 
@@ -95,10 +93,33 @@ export async function getKnowledgeBaseByCategory(category: string) {
 }
 
 export async function searchKnowledgeBase(searchTerm: string): Promise<KnowledgeBaseArticle[]> {
-  // Mantenemos la estructura por si el servidor la llama, aunque devuelva vacío
   return [];
 }
 
 export async function recordFeedback(articleId: string, isHelpful: boolean) {
   return { success: true };
+}
+
+// --- FUNCIONES DE RATINGS (Las que faltaban para que Render no explote) ---
+
+export async function createArticleRating(rating: InsertArticleRating) {
+  try {
+    const result = await db.insert(articleRatings).values(rating).returning();
+    return result[0] ?? null;
+  } catch (error) {
+    console.error("Error creating rating:", error);
+    return null;
+  }
+}
+
+export async function getArticleAverageRating(articleId: string) {
+  return { averageRating: 0, totalRatings: 0 };
+}
+
+export async function getArticleRatings(articleId: string) {
+  return [];
+}
+
+export async function getUserArticleRating(articleId: string, userEmail: string) {
+  return null;
 }
