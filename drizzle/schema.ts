@@ -1,35 +1,26 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean } from "drizzle-orm/mysql-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, boolean } from "drizzle-orm/pg-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
-export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
-  id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+// --- Definición de Enums para Postgres ---
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const priorityEnum = pgEnum("priority", ["low", "medium", "high"]);
+export const statusEnum = pgEnum("status", ["open", "in-progress", "resolved"]);
+
+// --- Tabla de Usuarios ---
+export const users = pgTable("users", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-
-/**
- * Support tickets table for storing customer inquiries
- */
-export const supportTickets = mysqlTable("support_tickets", {
-  id: int("id").autoincrement().primaryKey(),
+// --- Tabla de Tickets de Soporte ---
+export const supportTickets = pgTable("support_tickets", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   ticketId: varchar("ticketId", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
@@ -37,51 +28,38 @@ export const supportTickets = mysqlTable("support_tickets", {
   category: varchar("category", { length: 64 }).notNull(),
   subject: varchar("subject", { length: 255 }).notNull(),
   description: text("description").notNull(),
-  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
-  status: mysqlEnum("status", ["open", "in-progress", "resolved"]).default("open").notNull(),
-  emailSent: boolean("emailSent").default(false).notNull(),
-  emailSentAt: timestamp("emailSentAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  priority: priorityEnum("priority").default("medium").notNull(),
+  status: statusEnum("status").default("open").notNull(),
+  emailSent: boolean("email_sent").default(false).notNull(),
+  emailSentAt: timestamp("email_sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export type SupportTicket = typeof supportTickets.$inferSelect;
-export type InsertSupportTicket = typeof supportTickets.$inferInsert;
-
-/**
- * Knowledge Base table for FAQ articles
- */
-export const knowledgeBase = mysqlTable("knowledge_base", {
-  id: int("id").autoincrement().primaryKey(),
+// --- Tabla de Base de Conocimiento (Donde irá tu info técnica) ---
+export const knowledgeBase = pgTable("knowledge_base", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   articleId: varchar("articleId", { length: 64 }).notNull().unique(),
   title: varchar("title", { length: 255 }).notNull(),
   category: varchar("category", { length: 64 }).notNull(),
   keywords: text("keywords").notNull(),
   content: text("content").notNull(),
   summary: text("summary"),
-  isActive: boolean("isActive").default(true).notNull(),
-  views: int("views").default(0).notNull(),
-  helpful: int("helpful").default(0).notNull(),
-  notHelpful: int("notHelpful").default(0).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  views: integer("views").default(0).notNull(),
+  helpful: integer("helpful").default(0).notNull(),
+  notHelpful: integer("not_helpful").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export type KnowledgeBaseArticle = typeof knowledgeBase.$inferSelect;
-export type InsertKnowledgeBaseArticle = typeof knowledgeBase.$inferInsert;
-
-/**
- * Article Ratings table for storing user ratings and reviews
- */
-export const articleRatings = mysqlTable("article_ratings", {
-  id: int("id").autoincrement().primaryKey(),
+// --- Tabla de Valoraciones ---
+export const articleRatings = pgTable("article_ratings", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   articleId: varchar("articleId", { length: 64 }).notNull(),
   userEmail: varchar("userEmail", { length: 320 }).notNull(),
-  rating: int("rating").notNull(), // 1-5 stars
+  rating: integer("rating").notNull(), 
   review: text("review"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
-
-export type ArticleRating = typeof articleRatings.$inferSelect;
-export type InsertArticleRating = typeof articleRatings.$inferInsert;
