@@ -82,7 +82,7 @@ export async function updateSupportTicket(id: number, data: any) {
   return await db.update(supportTickets).set(data).where(eq(supportTickets.id, id));
 }
 
-// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para satisfacer al compilador) ---
+// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para el Build) ---
 
 export async function getAllKnowledgeBaseArticles() {
   return []; 
@@ -90,6 +90,10 @@ export async function getAllKnowledgeBaseArticles() {
 
 export async function getKnowledgeBaseByCategory(category: string) {
   return [];
+}
+
+export async function getKnowledgeBaseArticle(articleId: string) {
+  return null;
 }
 
 export async function searchKnowledgeBase(searchTerm: string): Promise<KnowledgeBaseArticle[]> {
