@@ -82,7 +82,7 @@ export async function updateSupportTicket(id: number, data: any) {
   return await db.update(supportTickets).set(data).where(eq(supportTickets.id, id));
 }
 
-// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para el Build) ---
+// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para satisfacer al compilador) ---
 
 export async function getAllKnowledgeBaseArticles() {
   return []; 
@@ -96,11 +96,19 @@ export async function searchKnowledgeBase(searchTerm: string): Promise<Knowledge
   return [];
 }
 
+export async function incrementArticleViews(articleId: string) {
+  return { success: true };
+}
+
 export async function recordFeedback(articleId: string, isHelpful: boolean) {
   return { success: true };
 }
 
-// --- FUNCIONES DE RATINGS (Las que faltaban para que Render no explote) ---
+export async function recordHelpfulFeedback(articleId: string, isHelpful: boolean) {
+  return { success: true };
+}
+
+// --- FUNCIONES DE RATINGS ---
 
 export async function createArticleRating(rating: InsertArticleRating) {
   try {
@@ -122,4 +130,12 @@ export async function getArticleRatings(articleId: string) {
 
 export async function getUserArticleRating(articleId: string, userEmail: string) {
   return null;
+}
+
+export async function getArticleRatingStats(articleId: string) {
+  return { 
+    averageRating: 0, 
+    totalRatings: 0, 
+    ratingDistribution: [] 
+  };
 }
