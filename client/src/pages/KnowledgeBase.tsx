@@ -1,59 +1,54 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ThumbsUp, ThumbsDown, BookOpen } from "lucide-react";
-import { trpc } from "@/lib/trpc";
+import { Search, ChevronDown, BookOpen } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import StarRating from "@/components/StarRating";
+// Importamos los datos directamente del JSON
+import knowledgeData from "../data/knowledge.json";
+
+// Definimos la interfaz para TypeScript
+interface Article {
+  articleId: string;
+  title: string;
+  category: string;
+  keywords: string;
+  content: string;
+  summary: string;
+  isActive: boolean;
+}
 
 export default function KnowledgeBase() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
-  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, boolean>>({});
 
-  // Fetch all articles
-  const { data: allArticles = [] } = trpc.knowledgeBase.getAll.useQuery();
-
-  // Search articles
-  const { data: searchResults = [] } = trpc.knowledgeBase.search.useQuery(
-    { query: searchQuery },
-    { enabled: searchQuery.length > 0 }
-  );
-
-  // Get articles by category
-  const { data: categoryArticles = [] } = trpc.knowledgeBase.getByCategory.useQuery(
-    { category: selectedCategory || "" },
-    { enabled: !!selectedCategory }
-  );
-
-  // Record feedback mutation
-  const recordFeedbackMutation = trpc.knowledgeBase.recordFeedback.useMutation();
-
-  // Determine which articles to display
+  // 1. Filtrar artículos activos y aplicar búsqueda/categoría
   const displayedArticles = useMemo(() => {
-    if (searchQuery.length > 0) {
-      return searchResults;
+    let articles = (knowledgeData as Article[]).filter(a => a.isActive);
+
+    // Filtrar por búsqueda
+    if (searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase();
+      articles = articles.filter(
+        (a) =>
+          a.title.toLowerCase().includes(query) ||
+          a.content.toLowerCase().includes(query) ||
+          a.keywords.toLowerCase().includes(query)
+      );
     }
+
+    // Filtrar por categoría
     if (selectedCategory) {
-      return categoryArticles;
+      articles = articles.filter((a) => a.category === selectedCategory);
     }
-    return allArticles;
-  }, [searchQuery, searchResults, selectedCategory, categoryArticles, allArticles]);
 
-  // Get unique categories
+    return articles;
+  }, [searchQuery, selectedCategory]);
+
+  // 2. Obtener categorías únicas para el sidebar
   const categories = useMemo(() => {
-    const cats = new Set(allArticles.map((article) => article.category));
+    const cats = new Set(knowledgeData.map((article) => article.category));
     return Array.from(cats).sort();
-  }, [allArticles]);
-
-  const handleFeedback = async (articleId: string, isHelpful: boolean) => {
-    try {
-      await recordFeedbackMutation.mutateAsync({ articleId, isHelpful });
-      setFeedbackGiven((prev) => ({ ...prev, [articleId]: isHelpful }));
-    } catch (error) {
-      console.error("Error recording feedback:", error);
-    }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -70,14 +65,14 @@ export default function KnowledgeBase() {
           <div className="text-center mb-12">
             <div className="inline-block px-4 py-2 bg-accent/10 border border-accent/30 rounded-full mb-6">
               <span className="text-accent text-sm font-semibold flex items-center gap-2">
-                <BookOpen size={16} /> Base de Conocimientos
+                <BookOpen size={16} /> Base de Conocimientos (Local)
               </span>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-              Encuentra Respuestas Rápidas
+              Flaxnet Intelligence
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Explora nuestra base de conocimientos con artículos detallados sobre automatización, IA, diseño web y más.
+              Documentación técnica y guías sobre IA, automatización y desarrollo avanzado.
             </p>
 
             {/* Search Bar */}
@@ -86,7 +81,7 @@ export default function KnowledgeBase() {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
                 <input
                   type="text"
-                  placeholder="Busca un tema, pregunta o palabra clave..."
+                  placeholder="Busca tecnología, conceptos o guías..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/50 transition-all"
@@ -114,7 +109,7 @@ export default function KnowledgeBase() {
                         : "bg-card text-foreground hover:bg-card/80"
                     }`}
                   >
-                    Todas las categorías
+                    Todos los artículos
                   </button>
                   {categories.map((category) => (
                     <button
@@ -136,9 +131,9 @@ export default function KnowledgeBase() {
             {/* Main Content - Articles */}
             <div className="lg:col-span-3">
               {displayedArticles.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
                   <p className="text-muted-foreground text-lg">
-                    No se encontraron artículos. Intenta con otra búsqueda.
+                    No hemos encontrado nada para "{searchQuery}".
                   </p>
                 </div>
               ) : (
@@ -157,12 +152,14 @@ export default function KnowledgeBase() {
                         className="w-full px-6 py-4 flex items-center justify-between hover:bg-card/80 transition-colors"
                       >
                         <div className="text-left">
-                          <h3 className="text-lg font-semibold text-foreground mb-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-accent/20 text-accent rounded">
+                              {article.category}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground">
                             {article.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {article.summary || article.content.substring(0, 100) + "..."}
-                          </p>
                         </div>
                         <ChevronDown
                           size={20}
@@ -174,54 +171,17 @@ export default function KnowledgeBase() {
 
                       {/* Expanded Content */}
                       {expandedArticle === article.articleId && (
-                        <div className="px-6 py-4 border-t border-border bg-background/50">
-                          <div className="prose prose-invert max-w-none text-foreground">
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                        <div className="px-6 py-6 border-t border-border bg-background/30">
+                          <div className="prose prose-invert max-w-none">
+                            <p className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
                               {article.content}
                             </p>
                           </div>
-
-                          {/* Star Rating */}
-                          <div className="mt-6 pt-4 border-t border-border">
-                            <StarRating
-                              articleId={article.articleId}
-                              userEmail="anonymous@flaxnet.es"
-                            />
-                          </div>
-
-                          {/* Feedback Section */}
-                          <div className="mt-6 pt-4 border-t border-border flex items-center gap-4">
-                            <span className="text-sm text-muted-foreground">¿Fue útil?</span>
-                            <button
-                              onClick={() => handleFeedback(article.articleId, true)}
-                              disabled={feedbackGiven[article.articleId] !== undefined}
-                              className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-all ${
-                                feedbackGiven[article.articleId] === true
-                                  ? "bg-accent/20 text-accent"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              } disabled:opacity-50`}
-                            >
-                              <ThumbsUp size={16} />
-                              <span className="text-xs">{article.helpful}</span>
-                            </button>
-                            <button
-                              onClick={() => handleFeedback(article.articleId, false)}
-                              disabled={feedbackGiven[article.articleId] !== undefined}
-                              className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-all ${
-                                feedbackGiven[article.articleId] === false
-                                  ? "bg-destructive/20 text-destructive"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              } disabled:opacity-50`}
-                            >
-                              <ThumbsDown size={16} />
-                              <span className="text-xs">{article.notHelpful}</span>
-                            </button>
-                          </div>
-
-                          {/* Article Stats */}
-                          <div className="mt-4 text-xs text-muted-foreground">
-                            {article.views} vistas • Actualizado{" "}
-                            {new Date(article.updatedAt).toLocaleDateString("es-ES")}
+                          
+                          <div className="mt-8 pt-4 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground italic">
+                              Palabras clave: {article.keywords}
+                            </p>
                           </div>
                         </div>
                       )}
