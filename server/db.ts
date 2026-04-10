@@ -1,8 +1,10 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { readFileSync } from 'fs';
-import { join } from 'path';
+
+// IMPORTANTE: Importamos el JSON directamente para que se incluya en el build de Render
+import articles from "../client/src/data/knowledge.json";
+
 import {
   users,
   supportTickets,
@@ -16,13 +18,13 @@ const queryClient = postgres(process.env.DATABASE_URL!, { ssl: "require" });
 export const db = drizzle(queryClient);
 
 /**
- * Mantenemos getDb por compatibilidad
+ * Mantenemos getDb por compatibilidad con el resto del sistema
  */
 export async function getDb() {
   return db;
 }
 
-// --- FUNCIONES DE USUARIO ---
+// --- FUNCIONES DE USUARIO (Base de Datos) ---
 
 export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId));
@@ -55,7 +57,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
-// --- FUNCIONES DE TICKETS ---
+// --- FUNCIONES DE TICKETS (Base de Datos) ---
 
 export async function createSupportTicket(
   ticket: InsertSupportTicket
@@ -90,54 +92,42 @@ export async function updateSupportTicket(id: number, data: any) {
     .where(eq(supportTickets.id, id));
 }
 
-// --- LOGICA DE BÚSQUEDA PARA EL ASISTENTE IA (BASADA EN JSON) ---
+// --- LOGICA DE BÚSQUEDA PARA EL ASISTENTE IA (BASADA EN JSON IMPORTADO) ---
 
+/**
+ * Esta función es la que usa el chatbot para responder.
+ * Ahora lee directamente del JSON importado en memoria.
+ */
 export async function searchKnowledgeBase(searchTerm: string): Promise<any[]> {
   try {
-    // Intentamos 3 rutas posibles para no fallar ni en local ni en Render
-    const pathsToTry = [
-      join(process.cwd(), 'client', 'src', 'data', 'knowledge.json'),
-      join(process.cwd(), 'src', 'data', 'knowledge.json'),
-      join(__dirname, '..', 'client', 'src', 'data', 'knowledge.json')
-    ];
-
-    let rawData = null;
-    for (const p of pathsToTry) {
-      try {
-        rawData = readFileSync(p, 'utf8');
-        if (rawData) {
-          console.log("✅ JSON encontrado en:", p);
-          break;
-        }
-      } catch (e) {
-        continue; // Si no está aquí, probamos la siguiente
-      }
-    }
-
-    if (!rawData) {
-      console.error("❌ No se encontró knowledge.json en ninguna ruta conocida");
-      return [];
-    }
-
-    const articles = JSON.parse(rawData);
     const query = searchTerm.toLowerCase();
     
-    return articles.filter((a: any) => 
+    // Buscamos en el array de artículos importado
+    const results = (articles as any[]).filter((a: any) => 
       a.isActive && (
         a.title.toLowerCase().includes(query) || 
         a.content.toLowerCase().includes(query) || 
         a.keywords.toLowerCase().includes(query)
       )
-    ).slice(0, 5);
+    );
+
+    console.log(`🔍 Búsqueda IA: "${searchTerm}" | Resultados: ${results.length}`);
+    return results.slice(0, 5); 
   } catch (error) {
-    console.error("Error crítico en búsqueda JSON:", error);
+    console.error("Error en la búsqueda del chatbot:", error);
     return [];
   }
 }
 
-// --- MOCKS PARA MANTENER LA COMPATIBILIDAD DEL BUILD ---
+/**
+ * Devuelve todos los artículos para el servidor si fuera necesario
+ */
+export async function getAllKnowledgeBaseArticles() {
+  return articles;
+}
 
-export async function getAllKnowledgeBaseArticles() { return []; }
+// --- MOCKS DE COMPATIBILIDAD (Para evitar errores de compilación en Render) ---
+
 export async function getKnowledgeBaseByCategory(category: string) { return []; }
 export async function getKnowledgeBaseArticle(articleId: string) { return null; }
 export async function incrementArticleViews(articleId: string) { return { success: true }; }
