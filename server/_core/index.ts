@@ -33,6 +33,14 @@ async function startServer() {
     });
   } else {
     serveStatic(app);
+    // IMPORTANTE: Arrancar el servidor en Render / Producción, 
+    // pero no en Vercel (Vercel ya usa el export default app)
+    if (!process.env.VERCEL) {
+      const port = process.env.PORT || 3000;
+      server.listen(port, () => {
+        console.log(`Production server running on port ${port}`);
+      });
+    }
   }
 
   // IMPORTANTE: Devolvemos la app para que Vercel pueda manejarla
