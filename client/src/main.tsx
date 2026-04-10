@@ -8,6 +8,7 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
+// Función de seguridad para rutas relativas en el navegador
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; 
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
@@ -16,6 +17,7 @@ const getBaseUrl = () => {
 
 const queryClient = new QueryClient();
 
+// Manejador de errores de autenticación
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
@@ -24,6 +26,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   window.location.href = getLoginUrl();
 };
 
+// Suscripciones limpias al caché de Query
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     redirectToLoginIfUnauthorized(event.query.state.error);
@@ -36,10 +39,11 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Inicialización única del cliente tRPC
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: `${getBaseUrl()}/api/trpc`, // Solo una vez y corregida
+      url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {
@@ -51,6 +55,7 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+// Renderizado final
 createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
