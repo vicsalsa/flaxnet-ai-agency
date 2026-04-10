@@ -1,31 +1,5 @@
 [
-  {
-    "articleId": "gemma-4-edge",
-    "title": "Gemma 4: IA Agéntica en el Edge",
-    "category": "IA Local",
-    "keywords": "Gemma 4, Google, Open Source, Edge AI",
-    "content": "Google ha liberado Gemma 4, su modelo de código abierto más avanzado con capacidades agénticas de vanguardia. Está diseñado para ejecutarse localmente en dispositivos móviles mediante Google AI Edge Gallery. Gemma 4 permite llevar inteligencia avanzada directamente a dispositivos Android e iOS.",
-    "summary": "Gemma 4 permite llevar inteligencia avanzada directamente a dispositivos Android e iOS.",
-    "isActive": true
-  },
-  {
-    "articleId": "gemini-nano-4",
-    "title": "Gemini Nano 4 para Android",
-    "category": "IA Móvil",
-    "keywords": "Gemini Nano, Android, IA Local, Google",
-    "content": "Gemini Nano 4 es la evolución del modelo on-device de Google, optimizado para tareas de razonamiento multimodal sin conexión a internet. IA multimodal nativa para la próxima generación de smartphones.",
-    "summary": "IA multimodal nativa para la próxima generación de smartphones.",
-    "isActive": true
-  },
-  {
-    "articleId": "vram-llm-2026",
-    "title": "Requisitos de VRAM para LLMs (2025-2026)",
-    "category": "Infraestructura",
-    "keywords": "VRAM, GPU, Hardware, LLM, 2026",
-    "content": "La VRAM es el recurso más crítico para dimensionar hardware de IA en 2026. Para 2026, los modelos de 70B parámetros requieren un mínimo de 48GB de VRAM optimizada con técnicas de cuantización avanzada.",
-    "summary": "Guía técnica para dimensionar hardware de IA en 2026.",
-    "isActive": true
-  },
+ 
   {
     "articleId": "kb-001",
     "title": "¿Qué es n8n y cómo funciona?",
@@ -132,6 +106,33 @@
     "keywords": "diseño, web, proceso, UX, UI",
     "content": "Nuestro proceso de diseño web es completo y colaborativo:\n\n**Fase 1: Descubrimiento (1-2 semanas)**\n• Análisis de requisitos\n• Investigación de competencia\n• Definición de objetivos\n• Análisis de usuario\n\n**Fase 2: Diseño (2-3 semanas)**\n• Wireframes\n• Prototipos interactivos\n• Diseño visual\n• Revisión y feedback\n\n**Fase 3: Desarrollo (3-6 semanas)**\n• Desarrollo frontend\n• Integración backend\n• Optimización de rendimiento\n• Testing exhaustivo\n\n**Fase 4: Lanzamiento (1 semana)**\n• Deployment\n• Monitoreo\n• Capacitación\n• Soporte post-lanzamiento\n\nTrabajamos en sprints con revisiones regulares para asegurar satisfacción.",
     "summary": "Proceso en 4 fases: Descubrimiento, Diseño, Desarrollo y Lanzamiento con revisiones regulares.",
+    "isActive": true
+  },
+   {
+    "articleId": "kb-013",
+    "title": "Gemma 4: IA Agéntica en el Edge",
+    "category": "IA Local",
+    "keywords": "Gemma 4, Google, Open Source, Edge AI",
+    "content": "Google ha liberado Gemma 4, su modelo de código abierto más avanzado con capacidades agénticas de vanguardia. Está diseñado para ejecutarse localmente en dispositivos móviles mediante Google AI Edge Gallery. Gemma 4 permite llevar inteligencia avanzada directamente a dispositivos Android e iOS.",
+    "summary": "Gemma 4 permite llevar inteligencia avanzada directamente a dispositivos Android e iOS.",
+    "isActive": true
+  },
+  {
+    "articleId": "kb-014",
+    "title": "Gemini Nano 4 para Android",
+    "category": "IA Móvil",
+    "keywords": "Gemini Nano, Android, IA Local, Google",
+    "content": "Gemini Nano 4 es la evolución del modelo on-device de Google, optimizado para tareas de razonamiento multimodal sin conexión a internet. IA multimodal nativa para la próxima generación de smartphones.",
+    "summary": "IA multimodal nativa para la próxima generación de smartphones.",
+    "isActive": true
+  },
+  {
+    "articleId": "kb-015",
+    "title": "Requisitos de VRAM para LLMs (2025-2026)",
+    "category": "Infraestructura",
+    "keywords": "VRAM, GPU, Hardware, LLM, 2026",
+    "content": "La VRAM es el recurso más crítico para dimensionar hardware de IA en 2026. Para 2026, los modelos de 70B parámetros requieren un mínimo de 48GB de VRAM optimizada con técnicas de cuantización avanzada.",
+    "summary": "Guía técnica para dimensionar hardware de IA en 2026.",
     "isActive": true
   }
 ]
