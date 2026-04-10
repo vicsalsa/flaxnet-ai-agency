@@ -11,23 +11,33 @@ import {
 } from "./db";
 import { sendTicketConfirmationEmail, sendTicketUpdateEmail } from "./email";
 import { nanoid } from "nanoid";
+import { askFlaxnetIA } from "./ai.js"; // IMPORTANTE: Importamos la lógica de Gemini
 
 export const appRouter = router({
-  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // KnowledgeBase ahora usa sistema basado en JSON (client/src/data/knowledge.json)
-  // Las funciones de búsqueda están disponibles en el cliente via lib/knowledge.ts
+  // --- NUEVO ROUTER DE CHAT ---
+  chat: router({
+    ask: publicProcedure
+      .input(z.object({ message: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const reply = await askFlaxnetIA(input.message);
+          return { reply };
+        } catch (error) {
+          console.error("Error en tRPC Chat:", error);
+          throw new Error("La IA no pudo procesar tu solicitud.");
+        }
+      }),
+  }),
 
   tickets: router({
     create: publicProcedure
@@ -38,16 +48,13 @@ export const appRouter = router({
           phone: z.string().optional(),
           category: z.string().min(1, "La categoría es requerida"),
           subject: z.string().min(1, "El asunto es requerido"),
-          description: z
-            .string()
-            .min(10, "La descripción debe tener al menos 10 caracteres"),
+          description: z.string().min(10, "La descripción debe tener al menos 10 caracteres"),
           priority: z.enum(["low", "medium", "high"]).default("medium"),
         })
       )
       .mutation(async ({ input }) => {
         try {
           const ticketId = `TKT-${Date.now()}-${nanoid(9)}`;
-
           const ticket = await createSupportTicket({
             ticketId,
             name: input.name,
@@ -61,14 +68,9 @@ export const appRouter = router({
             emailSent: false,
           });
 
-          if (!ticket) {
-            throw new Error("Failed to create ticket");
-          }
+          if (!ticket) throw new Error("Failed to create ticket");
 
-          // Send confirmation email asynchronously
           const emailSent = await sendTicketConfirmationEmail(ticket);
-
-          // Update ticket with email sent status
           if (emailSent) {
             await updateSupportTicket(ticket.id, {
               emailSent: true,
@@ -79,14 +81,11 @@ export const appRouter = router({
           return {
             success: true,
             ticketId: ticket.ticketId,
-            message:
-              "Ticket creado exitosamente. Se ha enviado una confirmación por email.",
+            message: "Ticket creado exitosamente.",
           };
         } catch (error) {
           console.error("[API] Error creating ticket:", error);
-          throw new Error(
-            "Error al crear el ticket. Por favor, intenta de nuevo."
-          );
+          throw new Error("Error al crear el ticket.");
         }
       }),
 
@@ -94,56 +93,19 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email() }))
       .query(async ({ input }) => {
         try {
-          const tickets = await getSupportTicketsByEmail(input.email);
-          return tickets;
+          return await getSupportTicketsByEmail(input.email);
         } catch (error) {
-          console.error("[API] Error fetching tickets:", error);
           return [];
         }
       }),
 
     getAll: publicProcedure.query(async () => {
       try {
-        const tickets = await getAllSupportTickets();
-        return tickets;
+        return await getAllSupportTickets();
       } catch (error) {
-        console.error("[API] Error fetching all tickets:", error);
         return [];
       }
     }),
-
-    updateStatus: publicProcedure
-      .input(
-        z.object({
-          ticketId: z.number(),
-          status: z.enum(["open", "in-progress", "resolved"]),
-          updateMessage: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input }) => {
-        try {
-          const updated = await updateSupportTicket(input.ticketId, {
-            status: input.status,
-          });
-
-          if (!updated) {
-            throw new Error("Ticket not found");
-          }
-
-          // Send update email if message provided
-          if (input.updateMessage) {
-            await sendTicketUpdateEmail(updated, input.updateMessage);
-          }
-
-          return {
-            success: true,
-            message: "Ticket actualizado exitosamente.",
-          };
-        } catch (error) {
-          console.error("[API] Error updating ticket:", error);
-          throw new Error("Error al actualizar el ticket.");
-        }
-      }),
   }),
 });
 
