@@ -8,8 +8,25 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
+// --- CONFIGURACIÓN DE SEGURIDAD PARA VERCEL ---
+
+/**
+ * Esta función determina la URL base de forma segura.
+ * Devuelve un string vacío en el navegador para usar rutas relativas,
+ * evitando que el constructor de tRPC falle por variables indefinidas.
+ */
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") return ""; 
+  // Si estamos en Vercel (Server Side), intentamos capturar la URL del sistema
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+};
+
 const queryClient = new QueryClient();
 
+/**
+ * Manejador de redirección automática si la sesión expira
+ */
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
@@ -21,6 +38,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   window.location.href = getLoginUrl();
 };
 
+// Suscripciones al caché para detectar errores de autenticación globalmente
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
@@ -37,10 +55,13 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// --- INICIALIZACIÓN DEL CLIENTE TRPC ---
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      // Usamos la función de seguridad para evitar "Invalid URL"
+      url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       fetch(input, init) {
         return globalThis.fetch(input, {
@@ -51,6 +72,8 @@ const trpcClient = trpc.createClient({
     }),
   ],
 });
+
+// --- RENDERIZADO DE LA APLICACIÓN ---
 
 createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
