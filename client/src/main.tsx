@@ -8,8 +8,9 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
+// Forzamos a que siempre devuelva una URL absoluta válida
 const getBaseUrl = () => {
-  if (typeof window !== "undefined") return ""; 
+  if (typeof window !== "undefined") return window.location.origin; 
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return `http://localhost:${process.env.PORT ?? 3000}`;
 };
@@ -20,7 +21,6 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
   if (error.message !== UNAUTHED_ERR_MSG) return;
-
   window.location.href = getLoginUrl();
 };
 
@@ -39,6 +39,7 @@ queryClient.getMutationCache().subscribe(event => {
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
+      // Ahora url será algo como "https://tu-web.vercel.app/api/trpc"
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       fetch(input, init) {
