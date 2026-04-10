@@ -94,25 +94,43 @@ export async function updateSupportTicket(id: number, data: any) {
 
 export async function searchKnowledgeBase(searchTerm: string): Promise<any[]> {
   try {
-    // Definimos la ruta al archivo JSON desde la raíz del servidor
-    const jsonPath = join(process.cwd(), 'client', 'src', 'data', 'knowledge.json');
-    const rawData = readFileSync(jsonPath, 'utf8');
-    const articles = JSON.parse(rawData);
+    // Intentamos 3 rutas posibles para no fallar ni en local ni en Render
+    const pathsToTry = [
+      join(process.cwd(), 'client', 'src', 'data', 'knowledge.json'),
+      join(process.cwd(), 'src', 'data', 'knowledge.json'),
+      join(__dirname, '..', 'client', 'src', 'data', 'knowledge.json')
+    ];
 
+    let rawData = null;
+    for (const p of pathsToTry) {
+      try {
+        rawData = readFileSync(p, 'utf8');
+        if (rawData) {
+          console.log("✅ JSON encontrado en:", p);
+          break;
+        }
+      } catch (e) {
+        continue; // Si no está aquí, probamos la siguiente
+      }
+    }
+
+    if (!rawData) {
+      console.error("❌ No se encontró knowledge.json en ninguna ruta conocida");
+      return [];
+    }
+
+    const articles = JSON.parse(rawData);
     const query = searchTerm.toLowerCase();
     
-    // Filtramos los artículos que coincidan con el término de búsqueda
-    const results = articles.filter((a: any) => 
+    return articles.filter((a: any) => 
       a.isActive && (
         a.title.toLowerCase().includes(query) || 
         a.content.toLowerCase().includes(query) || 
         a.keywords.toLowerCase().includes(query)
       )
-    );
-
-    return results.slice(0, 5); // Devolvemos los 5 más relevantes
+    ).slice(0, 5);
   } catch (error) {
-    console.error("Error en la búsqueda local del servidor:", error);
+    console.error("Error crítico en búsqueda JSON:", error);
     return [];
   }
 }
