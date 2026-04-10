@@ -8,45 +8,42 @@ import { appRouter } from "../routers.js";
 import { createContext } from "./context.js";
 import { serveStatic, setupVite } from "./vite.js";
 
-async function startServer() {
-  const app = express();
-  const server = createServer(app);
-  
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+const app = express();
+const server = createServer(app);
 
-  registerOAuthRoutes(app);
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
+registerOAuthRoutes(app);
 
-  if (process.env.NODE_ENV === "development") {
+app.use(
+  "/api/trpc",
+  createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
+if (process.env.NODE_ENV === "development") {
+  // Wrapper async for dev to avoid top level await in Vercel
+  (async () => {
     await setupVite(app, server);
     const port = process.env.PORT || 3000;
     server.listen(port, () => {
       console.log(`Development server running on http://localhost:${port}`);
     });
-  } else {
-    serveStatic(app);
-    // IMPORTANTE: Arrancar el servidor en Render / Producción, 
-    // pero no en Vercel (Vercel ya usa el export default app)
-    if (!process.env.VERCEL) {
-      const port = process.env.PORT || 3000;
-      server.listen(port, () => {
-        console.log(`Production server running on port ${port}`);
-      });
-    }
+  })();
+} else {
+  serveStatic(app);
+  // IMPORTANTE: Arrancar el servidor en Render / Producción, 
+  // pero no en Vercel (Vercel ya usa el export default app)
+  if (!process.env.VERCEL) {
+    const port = process.env.PORT || 3000;
+    server.listen(port, () => {
+      console.log(`Production server running on port ${port}`);
+    });
   }
-
-  // IMPORTANTE: Devolvemos la app para que Vercel pueda manejarla
-  return app;
 }
 
-// Exportamos la ejecución de la app para Vercel
-const app = await startServer();
+// Exportamos la app para Vercel Serverless
 export default app;
