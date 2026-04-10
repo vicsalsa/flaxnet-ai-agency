@@ -1,7 +1,8 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
+// Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
-  // Añadimos valores por defecto o vacíos para evitar que el constructor de URL explote
+  // Definimos las variables una sola vez con valores de respaldo (fallback)
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL || "https://placeholder.com";
   const appId = import.meta.env.VITE_APP_ID || "default-id";
   
@@ -12,6 +13,7 @@ export const getLoginUrl = () => {
   const state = btoa(redirectUri);
 
   try {
+    // El constructor de URL ahora siempre recibirá un string válido
     const url = new URL(`${oauthPortalUrl}/app-auth`);
     url.searchParams.set("appId", appId);
     url.searchParams.set("redirectUri", redirectUri);
@@ -19,7 +21,7 @@ export const getLoginUrl = () => {
     url.searchParams.set("type", "signIn");
     return url.toString();
   } catch (e) {
-    console.error("Error construyendo Login URL:", e);
-    return "#"; // Retorna un link vacío si falla para que no rompa la app
+    console.error("Error crítico construyendo Login URL:", e);
+    return "#"; 
   }
 };
