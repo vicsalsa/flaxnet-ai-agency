@@ -1,21 +1,16 @@
-import { eq, like, and, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { 
-  users, 
-  supportTickets, 
-  knowledgeBase, 
-  articleRatings,
-  type InsertUser, 
-  type InsertSupportTicket, 
-  type SupportTicket, 
-  type KnowledgeBaseArticle, 
-  type InsertArticleRating, 
-  type ArticleRating 
+import {
+  users,
+  supportTickets,
+  type InsertUser,
+  type InsertSupportTicket,
+  type SupportTicket,
 } from "../drizzle/schema";
 
 // Conexión con SSL requerido para Render
-const queryClient = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
+const queryClient = postgres(process.env.DATABASE_URL!, { ssl: "require" });
 export const db = drizzle(queryClient);
 
 /**
@@ -38,108 +33,59 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, any> = {};
     const textFields = ["name", "email", "loginMethod"] as const;
-    
-    textFields.forEach((field) => {
+
+    textFields.forEach(field => {
       if (user[field] !== undefined) {
         values[field] = user[field] ?? null;
         updateSet[field] = user[field] ?? null;
       }
     });
-    
+
     if (user.lastSignedIn) updateSet.lastSignedIn = user.lastSignedIn;
-    
+
     await db.insert(users).values(values).onConflictDoUpdate({
       target: users.openId,
       set: updateSet,
     });
-  } catch (error) { 
-    console.error("Error upsertUser:", error); 
-    throw error; 
+  } catch (error) {
+    console.error("Error upsertUser:", error);
+    throw error;
   }
 }
 
 // --- FUNCIONES DE TICKETS ---
 
-export async function createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket | null> {
+export async function createSupportTicket(
+  ticket: InsertSupportTicket
+): Promise<SupportTicket | null> {
   try {
     const result = await db.insert(supportTickets).values(ticket).returning();
     return result[0] ?? null;
-  } catch (error) { 
-    console.error("Error ticket:", error); 
-    throw error; 
+  } catch (error) {
+    console.error("Error ticket:", error);
+    throw error;
   }
 }
 
 export async function getAllSupportTickets() {
-  return await db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+  return await db
+    .select()
+    .from(supportTickets)
+    .orderBy(desc(supportTickets.createdAt));
 }
 
 export async function getSupportTicketsByEmail(email: string) {
-  return await db.select().from(supportTickets).where(eq(supportTickets.email, email));
+  return await db
+    .select()
+    .from(supportTickets)
+    .where(eq(supportTickets.email, email));
 }
 
 export async function updateSupportTicket(id: number, data: any) {
-  return await db.update(supportTickets).set(data).where(eq(supportTickets.id, id));
+  return await db
+    .update(supportTickets)
+    .set(data)
+    .where(eq(supportTickets.id, id));
 }
 
-// --- FUNCIONES DE KNOWLEDGE BASE (Mocks para el Build) ---
-
-export async function getAllKnowledgeBaseArticles() {
-  return []; 
-}
-
-export async function getKnowledgeBaseByCategory(category: string) {
-  return [];
-}
-
-export async function getKnowledgeBaseArticle(articleId: string) {
-  return null;
-}
-
-export async function searchKnowledgeBase(searchTerm: string): Promise<KnowledgeBaseArticle[]> {
-  return [];
-}
-
-export async function incrementArticleViews(articleId: string) {
-  return { success: true };
-}
-
-export async function recordFeedback(articleId: string, isHelpful: boolean) {
-  return { success: true };
-}
-
-export async function recordHelpfulFeedback(articleId: string, isHelpful: boolean) {
-  return { success: true };
-}
-
-// --- FUNCIONES DE RATINGS ---
-
-export async function createArticleRating(rating: InsertArticleRating) {
-  try {
-    const result = await db.insert(articleRatings).values(rating).returning();
-    return result[0] ?? null;
-  } catch (error) {
-    console.error("Error creating rating:", error);
-    return null;
-  }
-}
-
-export async function getArticleAverageRating(articleId: string) {
-  return { averageRating: 0, totalRatings: 0 };
-}
-
-export async function getArticleRatings(articleId: string) {
-  return [];
-}
-
-export async function getUserArticleRating(articleId: string, userEmail: string) {
-  return null;
-}
-
-export async function getArticleRatingStats(articleId: string) {
-  return { 
-    averageRating: 0, 
-    totalRatings: 0, 
-    ratingDistribution: [] 
-  };
-}
+// KnowledgeBase ahora usa sistema basado en JSON (client/src/data/knowledge.json)
